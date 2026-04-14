@@ -32,7 +32,7 @@ def escalate_ticket(reason: str) -> str:
 # Build the agent
 agent = Agent(
     name="SupportTriageAgent",
-    model="gpt-4.1-mini",
+    model="gpt-5.4-mini",
     instructions="You are a support triage agent.  Use the tools available to help customers.",
     tools=[search_kb, escalate_ticket],
 )

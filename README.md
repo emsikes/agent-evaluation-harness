@@ -4,7 +4,7 @@
 ![Pydantic](https://img.shields.io/badge/pydantic-v2-red?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
 ![Status](https://img.shields.io/badge/status-active--development-orange?style=flat-square)
-![Layer](https://img.shields.io/badge/layer-1%20of%204%20complete-brightgreen?style=flat-square)
+![Layer](https://img.shields.io/badge/layer-2%20of%204%20complete-brightgreen?style=flat-square)
 
 A structured evaluation harness for tool-calling AI agents. Not a chatbot demo — a test rig for answering five questions on every change:
 
@@ -27,7 +27,7 @@ Dataset → Runner → Scorer → Reporter
 | Layer | Status | Purpose |
 |---|---|---|
 | 1. Dataset | ✅ Complete | Typed, validated test cases loaded from YAML |
-| 2. Runner | 🔲 In Progress | Executes agent against each case, captures trace |
+| 2. Runner | ✅ Complete | Executes agent against each case, captures trace |
 | 3. Scorer | 🔲 Planned | Grades behavior against expected outcomes |
 | 4. Reporter | 🔲 Planned | Surfaces regressions, cost, latency, safety failures |
 
@@ -64,6 +64,12 @@ cd agent-evaluation-harness
 python -m venv venv
 source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -e .
+```
+
+Set your OpenAI API key in a `.env` file at the repo root:
+
+```
+OPENAI_API_KEY=sk-...
 ```
 
 ---
@@ -131,9 +137,9 @@ Loaded 2 cases
 
 ---
 
-## Planned: Layer 2 — Runner
+## Layer 2: Runner
 
-The runner will execute the agent against each `EvalCase` using the OpenAI Agents SDK and return a structured trace per case:
+The runner executes an agent against each `EvalCase` using the OpenAI Agents SDK and returns a structured `RunResult` per case.
 
 ```python
 @dataclass
@@ -145,10 +151,38 @@ class RunResult:
     prompt_tokens: int
     completion_tokens: int
     latency_ms: float
-    raw_trace: dict
+    error: str | None
 ```
 
-Tool calls will be mockable for deterministic testing without live API calls.
+The agent is injected as a dependency — the runner works with both live and mock agents without code changes.
+
+### Running a dataset
+
+```python
+from harness.runner import AgentRunner
+from harness.dataset import EvalDataset
+from agents import Agent
+
+agent = Agent(
+    name="SupportTriageAgent",
+    model="gpt-5.4-mini",
+    instructions="You are a support triage agent. Use the tools available to help customers.",
+    tools=[search_kb, escalate_ticket],
+)
+
+dataset = EvalDataset("code/datasets/support_triage.yaml")
+runner = AgentRunner(agent)
+
+for case in dataset:
+    result = await runner.run(case)
+    status = "✅" if not result.error else "❌"
+    print(f"{status} {result.case_id} | tools={result.actual_tools} | tokens={result.prompt_tokens + result.completion_tokens} | latency={result.latency_ms:.0f}ms")
+```
+
+```
+✅ TC-001 | tools=[] | tokens=130 | latency=1925ms
+✅ TC-004 | tools=[] | tokens=148 | latency=1886ms
+```
 
 ---
 
@@ -168,7 +202,7 @@ class ScoreResult:
     judge_reasoning: str | None
 ```
 
-LLM-as-judge scoring will use GPT-5 or Claude to grade open-ended outputs against rubrics.
+LLM-as-judge scoring will use `gpt-5.4` to grade open-ended outputs against rubrics.
 
 ---
 
@@ -186,7 +220,7 @@ The reporter will store run history in SQLite and surface:
 ## Roadmap
 
 - [x] Layer 1: Dataset schema and YAML loader
-- [ ] Layer 2: Runner with OpenAI Agents SDK
+- [x] Layer 2: Runner with OpenAI Agents SDK, token tracking, and latency capture
 - [ ] Layer 3: Scorer (contains, exact, llm_judge)
 - [ ] Layer 4: Reporter with SQLite run history
 - [ ] pytest integration for CI-triggered regression runs
