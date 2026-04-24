@@ -2,7 +2,7 @@
 
 import yaml
 from pathlib import Path
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 """
 model_dump()→ plain Python dict
 model_dump_json()→ JSON string
@@ -43,6 +43,9 @@ class EvalCase(BaseModel):
     - description is the human intent
     - input is what is sent to the agent
     """
+    # Pydantic will raise a ValidationError if any unknown field is passed
+    model_config = ConfigDict(extra='forbid')
+
     id: str
     description: str
     input: str

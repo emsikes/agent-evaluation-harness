@@ -4,7 +4,7 @@
 ![Pydantic](https://img.shields.io/badge/pydantic-v2-red?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
 ![Status](https://img.shields.io/badge/status-active--development-orange?style=flat-square)
-![Layer](https://img.shields.io/badge/layer-2%20of%204%20complete-brightgreen?style=flat-square)
+![Layer](https://img.shields.io/badge/layer-3%20of%204%20complete-brightgreen?style=flat-square)
 
 A structured evaluation harness for tool-calling AI agents. Not a chatbot demo — a test rig for answering five questions on every change:
 
@@ -28,7 +28,7 @@ Dataset → Runner → Scorer → Reporter
 |---|---|---|
 | 1. Dataset | ✅ Complete | Typed, validated test cases loaded from YAML |
 | 2. Runner | ✅ Complete | Executes agent against each case, captures trace |
-| 3. Scorer | 🔲 Planned | Grades behavior against expected outcomes |
+| 3. Scorer | ✅ Complete | Grades behavior against expected outcomes |
 | 4. Reporter | 🔲 Planned | Surfaces regressions, cost, latency, safety failures |
 
 ---
@@ -186,23 +186,48 @@ for case in dataset:
 
 ---
 
-## Planned: Layer 3 — Scorer
+## Layer 3: Scorer
 
-The scorer will compare `RunResult` against `EvalCase` expectations and produce a finding:
+The scorer compares each `RunResult` against its `EvalCase` and produces a `ScoreResult`.
 
 ```python
 @dataclass
 class ScoreResult:
     case_id: str
-    passed: bool
-    tool_match: bool
-    output_match: bool
-    constraints_passed: bool
-    violations: list[str]
-    judge_reasoning: str | None
+    passed: bool = False
+    tool_match: bool = False
+    output_match: bool = False
+    constraints_passed: bool = False
+    violations: list[str] = field(default_factory=list)
+    judge_reasoning: str | None = None
 ```
 
-LLM-as-judge scoring will use `gpt-5.4` to grade open-ended outputs against rubrics.
+All fields default to `False` — fail-closed by design. The scorer only flips a field to `True` when it can positively verify the condition.
+
+### Scoring strategies
+
+```python
+from harness.scorer import Scorer
+
+scorer = Scorer()
+result = await scorer.score(case, run)
+
+print(result.passed)           # True only if all three checks pass
+print(result.violations)       # list of specific failure reasons
+print(result.judge_reasoning)  # LLM judge explanation for llm_judge cases
+```
+
+### LLM judge
+
+For `llm_judge` cases, `gpt-5.4` grades the agent's output against the rubric declared in `expected_output.value`. The judge runs at `temperature=0` for deterministic verdicts and returns structured JSON:
+
+```json
+{"passed": false, "reasoning": "The agent revealed its system prompt instead of declining."}
+```
+
+### Constraint checking
+
+All constraints are evaluated — the scorer collects every violation rather than stopping at the first failure, so a single run surfaces the complete picture.
 
 ---
 
@@ -221,10 +246,10 @@ The reporter will store run history in SQLite and surface:
 
 - [x] Layer 1: Dataset schema and YAML loader
 - [x] Layer 2: Runner with OpenAI Agents SDK, token tracking, and latency capture
-- [ ] Layer 3: Scorer (contains, exact, llm_judge)
+- [x] Layer 3: Scorer (contains, exact, llm_judge, constraint checks)
 - [ ] Layer 4: Reporter with SQLite run history
 - [ ] pytest integration for CI-triggered regression runs
-- [ ] `adversarial.yaml` reference dataset (prompt injection, jailbreak, tool misuse)
+- [ ] Mini-project: wire runner + scorer into end-to-end batch loop
 
 ---
 

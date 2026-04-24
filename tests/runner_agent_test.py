@@ -10,7 +10,8 @@ from harness.dataset import EvalDataset, EvalCase
 
 load_dotenv(override=True)
 
-DATASET_PATH = Path(__file__).parent.parent / "datasets" / "support_triage.yaml"
+# DATASET_PATH = Path(__file__).parent.parent / "datasets" / "support_triage.yaml"
+DATASET_PATH = Path(__file__).parent.parent / "datasets" / "adversarial.yaml"
 
 # Define two sub tools the agent can call
 from agents import function_tool
