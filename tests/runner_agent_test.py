@@ -6,7 +6,7 @@ from pathlib import Path
 
 from harness.runner import AgentRunner
 from harness.dataset import EvalDataset, EvalCase
-
+from harness.scorer import Scorer
 
 load_dotenv(override=True)
 
@@ -55,11 +55,20 @@ async def run_dataset():
         DATASET_PATH
     )
     runner = AgentRunner(agent)
+    scorer = Scorer()
 
     for case in dataset:
-        result = await runner.run(case)
-        status = "✅" if not result.error else "❌"
-        print(f"{status} {result.case_id} | tools={result.actual_tools} | tokens={result.prompt_tokens + result.completion_tokens} | latency={result.latency_ms:.0f}ms")
+        run = await runner.run(case)
+        score = await scorer.score(case, run)
+        status = "❌" if not score.passed else "✅"
+        print(f"{status} {run.case_id} | passed={score.passed} | tools={run.actual_tools} \
+              | tokens={run.prompt_tokens + run.completion_tokens} | latency={run.latency_ms:.0f}ms")
+        
+        if score.violations:
+            for v in score.violations:
+                print(f"    -> {v}")
+        if score.judge_reasoning:
+            print(f"    -> judge: {score.judge_reasoning}")
 
 # asyncio.run(main())
 
