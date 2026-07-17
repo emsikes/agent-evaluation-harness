@@ -25,7 +25,7 @@ license = "MIT"
 license-files = ["LICEN[CS]E*"]
 
 [tool.setuptools.packages.find]
-where = ["code"]
+where = ["."]
 
 [project.optional-dependencies]
 dev = ["pytest", "pytest-asyncio"]
