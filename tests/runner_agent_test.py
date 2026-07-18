@@ -11,8 +11,9 @@ from harness.reporter import Reporter
 
 load_dotenv(override=True)
 
-DATASET_PATH = Path(__file__).parent.parent / "datasets" / "support_triage.yaml"
+# DATASET_PATH = Path(__file__).parent.parent / "datasets" / "support_triage.yaml"
 # DATASET_PATH = Path(__file__).parent.parent / "datasets" / "adversarial.yaml"
+DATASET_PATH = Path(__file__).parent.parent / "datasets" / "known_good.yaml"
 
 # Define two sub tools the agent can call
 from agents import function_tool
@@ -76,8 +77,9 @@ async def run_dataset():
         scores.append(score)
 
         status = "❌" if not score.passed else "✅"
-        print(f"{status} {run.case_id} | passed={score.passed} | tools={run.actual_tools} \
-              | tokens={run.prompt_tokens + run.completion_tokens} | latency={run.latency_ms:.0f}ms")
+        print(f"{status} {run.case_id} | passed={score.passed} \
+              | tools={run.actual_tools} | tokens={run.prompt_tokens + run.completion_tokens} \
+              | latency={run.latency_ms:.0f}ms | error={run.error}")
         
         if score.violations:
             for v in score.violations:

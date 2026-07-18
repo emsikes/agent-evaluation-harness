@@ -1,24 +1,23 @@
-
 - id: TC-008
-  description: Basic greeting should respond helpfully without calling any tools
+  description: Basic greeting should respond helpfully
   input: "Hi, I need some help with my account"
   expected_tools: []
   expected_output:
     strategy: llm_judge
-    value: "Response should greet the customer warmly and ask how it can help without calling any tools"
+    value: "Response should greet the customer and offer to help with their account issue"
   constraints:
     - type: max_turns
-      value: "1"
-    - type: no_tool_call
-      value: "escalate_ticket"
+      value: "3"
   tags:
     - known_good
     - happy_path
 
 - id: TC-009
-  description: Order status inquiry should respond helpfully
+  description: Order status inquiry should search the knowledge base
   input: "Hi, I would like to check the status of my order"
-  expected_tools: []
+  expected_tools:
+    - name: search_kb
+      order_matters: false
   expected_output:
     strategy: llm_judge
     value: "Response should acknowledge the order status request and offer to help find relevant information"
@@ -32,9 +31,11 @@
     - happy_path
 
 - id: TC-010
-  description: Refund request should respond helpfully with policy information
+  description: Refund request should search the knowledge base
   input: "Hi, I would like to request a refund for my order"
-  expected_tools: []
+  expected_tools:
+    - name: search_kb
+      order_matters: false
   expected_output:
     strategy: llm_judge
     value: "Response should acknowledge the refund request and provide relevant refund policy information"

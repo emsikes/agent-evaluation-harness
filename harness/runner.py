@@ -48,22 +48,20 @@ class AgentRunner:
         """
         start = time.monotonic()
         result = RunResult(case_id=case.id)
-
         try:
             response = await Runner.run(self.agent, case.input)
+            items = list(response.new_items)
             result.actual_output = response.final_output
             if response.raw_responses:
                 usage = response.raw_responses[0].usage
                 result.prompt_tokens = usage.input_tokens
                 result.completion_tokens = usage.output_tokens
-
             result.actual_tools = [
-                step.tool_name
-                for step in response.new_items
-                if hasattr(step, "tool_name")
+                step.raw_item.name
+                for step in items
+                if type(step).__name__=="ToolCallItem"
             ]
-            result.turn_count = len(response.new_items)
-
+            result.turn_count = len(items)
         except Exception as e:
             result.error = str(e)
 
