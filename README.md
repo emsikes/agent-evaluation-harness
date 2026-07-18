@@ -3,7 +3,7 @@
 ![Python](https://img.shields.io/badge/python-3.12-blue?style=flat-square&logo=python&logoColor=white)
 ![Pydantic](https://img.shields.io/badge/pydantic-v2-red?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
-![Status](https://img.shields.io/badge/status-complete-brightgreen?style=flat-square)
+![Status](https://img.shields.io/badge/status-active--development-orange?style=flat-square)
 ![CI](https://github.com/emsikes/agent-evaluation-harness/actions/workflows/eval.yml/badge.svg)
 
 A structured evaluation harness for tool-calling AI agents. Not a chatbot demo — a test rig for answering five questions on every change:
@@ -30,7 +30,7 @@ Dataset → Runner → Scorer → Reporter
 | 2. Runner | ✅ Complete | Executes agent against each case, captures trace |
 | 3. Scorer | ✅ Complete | Grades behavior against expected outcomes |
 | 4. Reporter | ✅ Complete | Surfaces regressions, cost, latency, safety failures |
-| CI | ✅ Complete | 20 tests across two suites on every push |
+| CI | ✅ Complete | 22 tests across two suites on every push |
 
 ---
 
@@ -49,9 +49,9 @@ agent-evaluation-harness/
 │   ├── adversarial.yaml      # safety and attack cases
 │   └── known_good.yaml       # baseline regression cases
 ├── tests/
-│   ├── runner_agent_test.py  # full pipeline manual run
+│   ├── run_dataset.py        # full pipeline manual run with reporter output
 │   ├── test_eval.py          # live agent pytest suite (5 tests)
-│   └── test_mock.py          # mock agent pytest suite (15 tests)
+│   └── test_mock.py          # mock agent pytest suite (17 tests)
 ├── .github/workflows/
 │   └── eval.yml
 ├── Makefile
@@ -81,7 +81,7 @@ OPENAI_API_KEY=sk-...
 Run the full pipeline:
 
 ```bash
-python tests/runner_agent_test.py
+python tests/run_dataset.py
 ```
 
 Run the test suites:
@@ -98,7 +98,7 @@ make test-all    # both
 
 | Suite | File | Tests | API calls | Speed |
 |---|---|---|---|---|
-| Mock | `test_mock.py` | 15 | None | ~1s |
+| Mock | `test_mock.py` | 17 | None | ~1s |
 | Live | `test_eval.py` | 5 | Yes | ~45s |
 
 **Mock suite** tests harness infrastructure in isolation — scorer logic, tool matching, constraint checking, crash detection. Deterministic, free, runs without an API key.
@@ -136,6 +136,8 @@ Test cases are defined in YAML and validated against a Pydantic schema. Invalid 
       value: "3"
     - type: no_tool_call
       value: "escalate_ticket"
+    - type: allowed_tools
+      value: '["search_kb"]'
   tags:
     - known_good
     - happy_path
@@ -156,6 +158,7 @@ Test cases are defined in YAML and validated against a Pydantic schema. Invalid 
 | `no_tool_call` | Named tool must never be called |
 | `max_turns` | Agent must complete within N model invocations |
 | `no_keyword` | Named word must not appear in output |
+| `allowed_tools` | Only listed tools may be called — anything else is a violation |
 
 ---
 
@@ -233,7 +236,7 @@ SAFETY FAILURES (1):
 push to main
     │
     ▼
-Mock suite (test_mock.py) — 15 tests, no API, ~1s
+Mock suite (test_mock.py) — 17 tests, no API, ~1s
     │ passes
     ▼
 Live suite (test_eval.py) — 5 tests, live agent, ~45s
@@ -259,7 +262,7 @@ Mock test coverage:
 | Crash detection | Crashed run fails, error in violations |
 | Tool matching | Correct tool passes, wrong tool fails, order enforcement |
 | Output strategies | contains pass/fail, exact pass/fail |
-| Constraint types | no_tool_call, max_turns, no_keyword — pass and fail cases |
+| Constraint types | no_tool_call, max_turns, no_keyword, allowed_tools — pass and fail cases |
 | Overall logic | passed=True only when all three checks clear |
 
 ---
@@ -286,11 +289,13 @@ Mock test coverage:
 - [x] Layer 3: Scorer (contains, exact, llm_judge, constraints, crash detection)
 - [x] Layer 4: Reporter with SQLite and regression detection
 - [x] Live pytest suite — 5 tests on every push
-- [x] Mock pytest suite — 15 deterministic tests, no API required
+- [x] Mock pytest suite — 17 deterministic tests, no API required
 - [x] Tool-calling enforcement test
 - [x] Known good baseline dataset
-- [x] Audit remediation (Fixes 1-4 complete)
-- [ ] Fix 5: allowed_tools allowlist constraint + tool argument capture
+- [x] Audit remediation Fixes 1-5A complete
+- [x] `allowed_tools` allowlist constraint type
+- [ ] Fix 5B: tool argument capture in `RunResult`
+- [ ] Constraint value validation at load time
 - [ ] Harden agent against TC-007 social engineering
 - [ ] PostgreSQL migration for production deployments
 
