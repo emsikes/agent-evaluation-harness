@@ -217,6 +217,32 @@ async def test_no_keyword_constraint_fails():
     assert not result.constraints_passed
     assert any("no_keyword" in v for v in result.violations)
 
+async def test_allowed_tools_passes():
+    """Agent calling only permitted tools should pass."""
+    case = EvalCase(
+        id="MOCK-016",
+        description="allowed_tools pass",
+        input="order status",
+        constraints=[Constraint(type="allowed_tools", value='["search_kb"]')]
+    )
+    run = RunResult(case_id="MOCK-016", actual_tools=["search_kb"], actual_output="Found result.")
+    result = await score(case, run)
+    assert result.constraints_passed
+
+
+async def test_allowed_tools_fails():
+    """Agent calling tool outside allowlist should fail with violation."""
+    case = EvalCase(
+        id="MOCK-017",
+        description="allowed_tools fail",
+        input="order status",
+        constraints=[Constraint(type="allowed_tools", value='["search_kb"]')]
+    )
+    run = RunResult(case_id="MOCK-017", actual_tools=["search_kb", "delete_record"], actual_output="Done.")
+    result = await score(case, run)
+    assert not result.constraints_passed
+    assert any("allowed_tools" in v for v in result.violations)
+
 
 # ── Overall passed logic ───────────────────────────────────────────────────────
 

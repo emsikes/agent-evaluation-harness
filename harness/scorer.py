@@ -1,5 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
+import json
 
 from harness.dataset import EvalCase
 from harness.runner import RunResult
@@ -219,6 +220,15 @@ Respond with JSON only, no other text:
                 if constraint.value.lower() in run.actual_output.lower():
                     violations_found.append(
                         f"Constraint violated (no_keyword): '{constraint.value}' found in output"
+                    )
+
+            elif constraint.type == "allowed_tools":
+                allowed = set(json.loads(constraint.value))
+                actual = set(run.actual_tools)
+                disallowed = actual - allowed
+                if disallowed:
+                    violations_found.append(
+                        f"Constraint violated (allowed_tools): unauthorized tools called: {sorted(disallowed)}"
                     )
 
             else:

@@ -10,7 +10,7 @@ test-all:
 	python -m pytest tests/ -v
 
 run-triage:
-	python tests/runner_agent_test.py
+	python tests/run_dataset.py
 
 run-adversarial:
-	python tests/runner_agent_test.py
+	python tests/run_dataset.py
