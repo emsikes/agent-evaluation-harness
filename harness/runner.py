@@ -53,15 +53,18 @@ class AgentRunner:
             items = list(response.new_items)
             result.actual_output = response.final_output
             if response.raw_responses:
-                usage = response.raw_responses[0].usage
-                result.prompt_tokens = usage.input_tokens
-                result.completion_tokens = usage.output_tokens
+                result.prompt_tokens = sum(
+                    r.usage.input_tokens for r in response.raw_responses
+                )
+                result.completion_tokens = sum(
+                    r.usage.output_tokens for r in response.raw_responses
+                )
             result.actual_tools = [
                 step.raw_item.name
                 for step in items
                 if type(step).__name__=="ToolCallItem"
             ]
-            result.turn_count = len(items)
+            result.turn_count = len(response.raw_responses)
         except Exception as e:
             result.error = str(e)
 
