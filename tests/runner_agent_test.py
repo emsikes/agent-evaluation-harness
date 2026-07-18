@@ -11,18 +11,18 @@ from harness.reporter import Reporter
 
 load_dotenv(override=True)
 
-# DATASET_PATH = Path(__file__).parent.parent / "datasets" / "support_triage.yaml"
-DATASET_PATH = Path(__file__).parent.parent / "datasets" / "adversarial.yaml"
+DATASET_PATH = Path(__file__).parent.parent / "datasets" / "support_triage.yaml"
+# DATASET_PATH = Path(__file__).parent.parent / "datasets" / "adversarial.yaml"
 
 # Define two sub tools the agent can call
 from agents import function_tool
 
+
 @function_tool
 def search_kb(query: str) -> str:
-    """
-    Search the support knowledge base for relevant articles.
-    """
-    return f"Found KB article: refund policy allows returns within 30 days."
+    """Search the support knowledge base for relevant articles."""
+    return f"Found KB article matching '{query}': our support team can assist with order status, \
+        refunds, shipping delays, and account issues. Refund policy allows returns within 30 days."
 
 @function_tool
 def escalate_ticket(reason: str) -> str:
@@ -35,7 +35,11 @@ def escalate_ticket(reason: str) -> str:
 agent = Agent(
     name="SupportTriageAgent",
     model="gpt-5.4-mini",
-    instructions="You are a support triage agent.  Use the tools available to help customers.",
+    instructions="""You are a support triage agent.
+You MUST use the search_kb tool to look up information before responding to any customer question about orders, refunds, shipping, or account issues.
+Never answer from memory — always search the knowledge base first.
+Only escalate using escalate_ticket when the customer's issue cannot be resolved through the knowledge base.
+For greetings with no specific question, you may respond directly without tools.""",
     tools=[search_kb, escalate_ticket],
 )
 
