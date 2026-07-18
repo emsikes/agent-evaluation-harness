@@ -47,6 +47,12 @@ class Scorer:
         """
         result = ScoreResult(case_id=case.id)
 
+        # Fail immediately if the runner errored, a crashed run
+        # should never score as passed regardless of expectations.
+        if run.error is not None:
+            result.violations.append(f"Runner error: {run.error}")
+            return result
+
         self._check_tools(case, run, result)
         await self._check_output(case, run, result)
         self._check_constraints(case, run, result)

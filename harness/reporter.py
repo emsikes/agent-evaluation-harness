@@ -37,6 +37,8 @@ class RunRecord:
     prompt_tokens: int
     completion_tokens: int
     latency_ms: float
+    error: str | None
+    turn_count: int
 
 
 class Reporter:
@@ -73,7 +75,9 @@ class Reporter:
                     actual_tools        TEXT,
                     prompt_tokens       INTEGER,
                     completion_tokens   INTEGER,
-                    latency_ms          REAL
+                    latency_ms          REAL,
+                    error               TEXT,
+                    turn_count          INTEGER
                 )
         """)
             
@@ -106,6 +110,8 @@ class Reporter:
             prompt_tokens=run.prompt_tokens,
             completion_tokens=run.completion_tokens,
             latency_ms=run.latency_ms,
+            error=run.error,
+            turn_count=run.turn_count,
         )
 
     def _insert_records(self, records: list[RunRecord]) -> None:
@@ -139,6 +145,8 @@ class Reporter:
                         r.prompt_tokens,
                         r.completion_tokens,
                         r.latency_ms,
+                        r.error,
+                        r.turn_count,
                     )
                     for r in records
                 ],
